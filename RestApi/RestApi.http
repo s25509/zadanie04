@@ -1,0 +1,31 @@
+@RestApi_HostAddress = http://localhost:5555
+
+### GET all animals
+GET {{RestApi_HostAddress}}/api/animals?orderBy=Name
+Accept: application/json
+
+### POST create animal
+POST {{RestApi_HostAddress}}/api/animals
+Content-Type: application/json
+
+{
+  "Name": "The animal's name",
+  "Description": "Some detailed description of the animal",
+  "Category": "eg. Bird, Fish, Mammal...",
+  "Area": "The animal's area of occurrence"
+}
+
+### PUT update animal
+PUT {{RestApi_HostAddress}}/api/animals/idAnimal
+Content-Type: application/json
+
+{
+  "Name": "Updated animal's name",
+  "Description": "Updated description of the animal",
+  "Category": "Updated category",
+  "Area": "Updated area of occurrence"
+}
+
+### DELETE animal
+DELETE {{RestApi_HostAddress}}/api/animals/idAnimal
+Accept: application/json
