@@ -1,31 +1,23 @@
 @RestApi_HostAddress = http://localhost:5555
 
-### GET all animals
-GET {{RestApi_HostAddress}}/api/animals?orderBy=Name
-Accept: application/json
-
-### POST create animal
-POST {{RestApi_HostAddress}}/api/animals
+### POST create delivery order
+POST {{RestApi_HostAddress}}/api/warehouses
 Content-Type: application/json
 
 {
-  "Name": "The animal's name",
-  "Description": "Some detailed description of the animal",
-  "Category": "eg. Bird, Fish, Mammal...",
-  "Area": "The animal's area of occurrence"
+  "IdProduct": "The ID number of the product being delivered",
+  "IdWarehouse": "The ID number of the warehouse realising the delivery",
+  "Amount": "The amount of the product being delivered",
+  "CreatedAt": "The time of creation of the delivery order"
 }
 
-### PUT update animal
-PUT {{RestApi_HostAddress}}/api/animals/idAnimal
+### POST create delivery order procedurally
+POST {{RestApi_HostAddress}}/api/warehouses_proc
 Content-Type: application/json
 
 {
-  "Name": "Updated animal's name",
-  "Description": "Updated description of the animal",
-  "Category": "Updated category",
-  "Area": "Updated area of occurrence"
+  "IdProduct": "The ID number of the product being delivered",
+  "IdWarehouse": "The ID number of the warehouse realising the delivery",
+  "Amount": "The amount of the product being delivered",
+  "CreatedAt": "The time of creation of the delivery order"
 }
-
-### DELETE animal
-DELETE {{RestApi_HostAddress}}/api/animals/idAnimal
-Accept: application/json
