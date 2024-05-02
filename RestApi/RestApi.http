@@ -10,3 +10,14 @@ Content-Type: application/json
   "Amount": "The amount of the product being delivered",
   "CreatedAt": "The time of creation of the delivery order"
 }
+
+### POST create delivery order procedurally
+POST {{RestApi_HostAddress}}/api/warehouses2
+Content-Type: application/json
+
+{
+  "IdProduct": "The ID number of the product being delivered",
+  "IdWarehouse": "The ID number of the warehouse realising the delivery",
+  "Amount": "The amount of the product being delivered",
+  "CreatedAt": "The time of creation of the delivery order"
+}
