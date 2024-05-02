@@ -12,10 +12,10 @@ public class WarehousesController(IDeliveryService service) : ControllerBase
 {
     [HttpPost("")]
     [ProducesResponseType(typeof(CreatedResponseModel), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(NoChangesResponseModel), StatusCodes.Status304NotModified)]
     [ProducesResponseType(typeof(BadRequestResponseModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(NotFoundResponseModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ConflictResponseModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(NoChangesResponseModel), StatusCodes.Status422UnprocessableEntity)]
     public IActionResult CreateDelivery([FromBody] DeliveryDTO dto)
     {
         try
@@ -28,11 +28,11 @@ public class WarehousesController(IDeliveryService service) : ControllerBase
                         createdDelivery))
                 : Conflict(new ConflictResponseModel("Could not register a new Delivery with given parameters"));
         }
-        catch (AlreadyHandledException e)
+        catch (AlreadyProcessedException e)
         {
-            return StatusCode(StatusCodes.Status304NotModified, new NoChangesResponseModel(e.Message));
+            return StatusCode(StatusCodes.Status422UnprocessableEntity, new NoChangesResponseModel(e.Message));
         }
-        catch (BadDateException e)
+        catch (BadDataException e)
         {
             return BadRequest(new BadRequestResponseModel(e.Message));
         }

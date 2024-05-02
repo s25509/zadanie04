@@ -13,8 +13,8 @@ public class NotFoundResponseModel(string message)
 
 public class NoChangesResponseModel(string message)
 {
-    [DefaultValue(StatusCodes.Status304NotModified)]
-    public int Status { get; } = StatusCodes.Status304NotModified;
+    [DefaultValue(StatusCodes.Status422UnprocessableEntity)]
+    public int Status { get; } = StatusCodes.Status422UnprocessableEntity;
 
     [DefaultValue("Order with ID: <id> is already being processed")]
     public string Message { get; init; } = message;
@@ -25,7 +25,7 @@ public class BadRequestResponseModel(string message)
     [DefaultValue(StatusCodes.Status400BadRequest)]
     public int Status { get; } = StatusCodes.Status400BadRequest;
 
-    [DefaultValue("Order with ID: <id> was created LATER than this request")]
+    [DefaultValue("Order with ID: <id> was created LATER than this request OR Amount cannot be less than 1")]
     public string Message { get; init; } = message;
 }
 

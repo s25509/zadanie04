@@ -7,6 +7,8 @@ public interface IDeliveryRepository
 {
     public Delivery? AddDelivery(int idWarehouse, int idProduct, int idOrder, int amount, decimal price,
         DateTime createdAt);
+
+    public Delivery? GetDeliveryByOrderId(int idOrder);
 }
 
 public class DeliveryRepository(IConfiguration configuration) : IDeliveryRepository
@@ -24,11 +26,18 @@ public class DeliveryRepository(IConfiguration configuration) : IDeliveryReposit
             var updateQuery = @"UPDATE ""Order"" SET FulfilledAt = @FulfilledAt WHERE IdOrder = @IdOrder;";
             using var updateCommand = new SqlCommand(updateQuery, connection);
             updateCommand.Transaction = transaction;
-            updateCommand.Parameters.AddWithValue("@IdOrder", amount);
+            updateCommand.Parameters.AddWithValue("@IdOrder", idOrder);
             updateCommand.Parameters.AddWithValue("@FulfilledAt", DateTime.UtcNow);
-            updateCommand.ExecuteNonQuery();
+            var udatedRows = updateCommand.ExecuteNonQuery();
 
-            var insertQuery = @"INSERT INTO ""Product_Warehouse"" (IdWarehouse, IdProduct, IdOrder, CreatedAt, Amount, Price)
+            if (udatedRows != 1)
+            {
+                transaction.Rollback();
+                return null;
+            }
+
+            var insertQuery =
+                @"INSERT INTO ""Product_Warehouse"" (IdWarehouse, IdProduct, IdOrder, CreatedAt, Amount, Price)
                                 OUTPUT INSERTED.*
                                 VALUES (@IdWarehouse, @IdProduct, @IdOrder, @CreatedAt, @Amount, @Price);";
             using var insertCommand = new SqlCommand(insertQuery, connection);
@@ -47,8 +56,9 @@ public class DeliveryRepository(IConfiguration configuration) : IDeliveryReposit
                 return null;
             }
 
-            var delivery = new Delivery()
+            var delivery = new Delivery
             {
+                IdProductWarehouse = (int)reader["IdProductWarehouse"],
                 IdWarehouse = (int)reader["IdWarehouse"],
                 IdProduct = (int)reader["IdProduct"],
                 IdOrder = (int)reader["IdOrder"],
@@ -66,5 +76,28 @@ public class DeliveryRepository(IConfiguration configuration) : IDeliveryReposit
             transaction.Rollback();
             return null;
         }
+    }
+
+    public Delivery? GetDeliveryByOrderId(int idOrder)
+    {
+        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        connection.Open();
+
+        var command = new SqlCommand("SELECT * FROM Product_Warehouse WHERE IdOrder = @IdOrder", connection);
+        command.Parameters.AddWithValue("@IdOrder", idOrder);
+        using var reader = command.ExecuteReader();
+
+        if (!reader.Read()) return null;
+        var delivery = new Delivery
+        {
+            IdProductWarehouse = (int)reader["IdProductWarehouse"],
+            IdWarehouse = (int)reader["IdWarehouse"],
+            IdProduct = (int)reader["IdProduct"],
+            IdOrder = (int)reader["IdOrder"],
+            Amount = (int)reader["Amount"],
+            Price = (decimal)reader["Price"],
+            CreatedAt = DateTime.Parse(reader["CreatedAt"].ToString()!)
+        };
+        return delivery;
     }
 }
