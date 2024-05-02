@@ -5,34 +5,46 @@ namespace RestApi.Repositories;
 
 public interface IDeliveryRepository
 {
-    public Delivery? AddDelivery(int idWarehouse, int idProduct, int idOrder, int amount, decimal price,
-        DateTime createdAt);
+    public Task<Delivery?> AddDelivery(
+        int idWarehouse,
+        int idProduct,
+        int idOrder,
+        int amount,
+        decimal price,
+        DateTime createdAt
+    );
 
-    public Delivery? GetDeliveryByOrderId(int idOrder);
+    public Task<Delivery?> GetDeliveryByOrderId(int idOrder);
 }
 
 public class DeliveryRepository(IConfiguration configuration) : IDeliveryRepository
 {
-    public Delivery? AddDelivery(int idWarehouse, int idProduct, int idOrder, int amount, decimal price,
-        DateTime createdAt)
+    public async Task<Delivery?> AddDelivery(
+        int idWarehouse,
+        int idProduct,
+        int idOrder,
+        int amount,
+        decimal price,
+        DateTime createdAt
+    )
     {
-        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
-        connection.Open();
+        await using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        await connection.OpenAsync();
 
-        using var transaction = connection.BeginTransaction();
+        await using var transaction = await connection.BeginTransactionAsync();
 
         try
         {
             var updateQuery = @"UPDATE ""Order"" SET FulfilledAt = @FulfilledAt WHERE IdOrder = @IdOrder;";
-            using var updateCommand = new SqlCommand(updateQuery, connection);
-            updateCommand.Transaction = transaction;
+            await using var updateCommand = new SqlCommand(updateQuery, connection);
+            updateCommand.Transaction = (SqlTransaction)transaction;
             updateCommand.Parameters.AddWithValue("@IdOrder", idOrder);
             updateCommand.Parameters.AddWithValue("@FulfilledAt", DateTime.UtcNow);
-            var udatedRows = updateCommand.ExecuteNonQuery();
+            var updatedRows = await updateCommand.ExecuteNonQueryAsync();
 
-            if (udatedRows != 1)
+            if (updatedRows != 1)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync();
                 return null;
             }
 
@@ -40,19 +52,19 @@ public class DeliveryRepository(IConfiguration configuration) : IDeliveryReposit
                 @"INSERT INTO ""Product_Warehouse"" (IdWarehouse, IdProduct, IdOrder, CreatedAt, Amount, Price)
                                 OUTPUT INSERTED.*
                                 VALUES (@IdWarehouse, @IdProduct, @IdOrder, @CreatedAt, @Amount, @Price);";
-            using var insertCommand = new SqlCommand(insertQuery, connection);
-            insertCommand.Transaction = transaction;
+            await using var insertCommand = new SqlCommand(insertQuery, connection);
+            insertCommand.Transaction = (SqlTransaction)transaction;
             insertCommand.Parameters.AddWithValue("@IdWarehouse", idWarehouse);
             insertCommand.Parameters.AddWithValue("@IdProduct", idProduct);
             insertCommand.Parameters.AddWithValue("@IdOrder", idOrder);
             insertCommand.Parameters.AddWithValue("@Amount", amount);
             insertCommand.Parameters.AddWithValue("@Price", price);
             insertCommand.Parameters.AddWithValue("@CreatedAt", createdAt);
-            var reader = insertCommand.ExecuteReader();
+            await using var reader = await insertCommand.ExecuteReaderAsync();
 
-            if (!reader.Read())
+            if (await reader.ReadAsync() != true)
             {
-                transaction.Rollback();
+                await transaction.RollbackAsync();
                 return null;
             }
 
@@ -67,27 +79,27 @@ public class DeliveryRepository(IConfiguration configuration) : IDeliveryReposit
                 CreatedAt = DateTime.Parse(reader["CreatedAt"].ToString()!)
             };
 
-            reader.Close();
-            transaction.Commit();
+            await reader.CloseAsync();
+            await transaction.CommitAsync();
             return delivery;
         }
         catch
         {
-            transaction.Rollback();
+            await transaction.RollbackAsync();
             return null;
         }
     }
 
-    public Delivery? GetDeliveryByOrderId(int idOrder)
+    public async Task<Delivery?> GetDeliveryByOrderId(int idOrder)
     {
-        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
-        connection.Open();
+        await using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        await connection.OpenAsync();
 
-        var command = new SqlCommand("SELECT * FROM Product_Warehouse WHERE IdOrder = @IdOrder", connection);
+        await using var command = new SqlCommand("SELECT * FROM Product_Warehouse WHERE IdOrder = @IdOrder", connection);
         command.Parameters.AddWithValue("@IdOrder", idOrder);
-        using var reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
-        if (!reader.Read()) return null;
+        if (await reader.ReadAsync() != true) return null;
         var delivery = new Delivery
         {
             IdProductWarehouse = (int)reader["IdProductWarehouse"],

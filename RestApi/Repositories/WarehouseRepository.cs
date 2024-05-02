@@ -5,21 +5,21 @@ namespace RestApi.Repositories;
 
 public interface IWarehouseRepository
 {
-    public Warehouse? GetWarehouseById(int idWarehouse);
+    public Task<Warehouse?> GetWarehouseById(int idWarehouse);
 }
 
 public class WarehouseRepository(IConfiguration configuration) : IWarehouseRepository
 {
-    public Warehouse? GetWarehouseById(int idWarehouse)
+    public async Task<Warehouse?> GetWarehouseById(int idWarehouse)
     {
-        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
-        connection.Open();
+        await using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        await connection.OpenAsync();
 
         var command = new SqlCommand("SELECT * FROM Warehouse WHERE IdWarehouse = @IdWarehouse", connection);
         command.Parameters.AddWithValue("@IdWarehouse", idWarehouse);
-        using var reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
-        if (!reader.Read()) return null;
+        if (await reader.ReadAsync() != true) return null;
         var warehouse = new Warehouse
         {
             IdWarehouse = (int)reader["IdWarehouse"],

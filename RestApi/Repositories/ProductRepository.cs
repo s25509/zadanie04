@@ -5,21 +5,21 @@ namespace RestApi.Repositories;
 
 public interface IProductRepository
 {
-    public Product? GetProductById(int idProduct);
+    public Task<Product?> GetProductById(int idProduct);
 }
 
 public class ProductRepository(IConfiguration configuration) : IProductRepository
 {
-    public Product? GetProductById(int idProduct)
+    public async Task<Product?> GetProductById(int idProduct)
     {
-        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
-        connection.Open();
+        await using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        await connection.OpenAsync();
 
-        var command = new SqlCommand("SELECT * FROM Product WHERE IdProduct = @IdProduct", connection);
+        await using var command = new SqlCommand("SELECT * FROM Product WHERE IdProduct = @IdProduct", connection);
         command.Parameters.AddWithValue("@IdProduct", idProduct);
-        using var reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
-        if (!reader.Read()) return null;
+        if (await reader.ReadAsync() != true) return null;
         var product = new Product
         {
             IdProduct = (int)reader["IdProduct"],

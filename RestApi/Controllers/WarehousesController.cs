@@ -16,11 +16,11 @@ public class WarehousesController(IDeliveryService service) : ControllerBase
     [ProducesResponseType(typeof(NotFoundResponseModel), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ConflictResponseModel), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(NoChangesResponseModel), StatusCodes.Status422UnprocessableEntity)]
-    public IActionResult CreateDelivery([FromBody] DeliveryDTO dto)
+    public async Task<IActionResult> CreateDelivery([FromBody] DeliveryDTO dto)
     {
         try
         {
-            var createdDelivery = service.AddDelivery(dto);
+            var createdDelivery = await service.AddDelivery(dto);
             return createdDelivery != null
                 ? Created("",
                     new CreatedResponseModel(

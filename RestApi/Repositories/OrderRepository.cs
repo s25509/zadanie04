@@ -5,23 +5,24 @@ namespace RestApi.Repositories;
 
 public interface IOrderRepository
 {
-    public Order? GetOrderByProductIdAndAmount(int idProduct, int amount);
+    public Task<Order?> GetOrderByProductIdAndAmount(int idProduct, int amount);
 }
 
 public class OrderRepository(IConfiguration configuration) : IOrderRepository
 {
-    public Order? GetOrderByProductIdAndAmount(int idProduct, int amount)
+    public async Task<Order?> GetOrderByProductIdAndAmount(int idProduct, int amount)
     {
-        using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
-        connection.Open();
+        await using var connection = new SqlConnection(configuration["ConnectionStrings:DefaultConnection"]);
+        await connection.OpenAsync();
 
-        var command = new SqlCommand(@"SELECT * FROM ""Order"" WHERE IdProduct = @IdProduct AND Amount = @amount",
+        await using var command = new SqlCommand(
+            @"SELECT * FROM ""Order"" WHERE IdProduct = @IdProduct AND Amount = @amount",
             connection);
         command.Parameters.AddWithValue("@IdProduct", idProduct);
         command.Parameters.AddWithValue("@amount", amount);
-        using var reader = command.ExecuteReader();
+        await using var reader = await command.ExecuteReaderAsync();
 
-        if (!reader.Read()) return null;
+        if (await reader.ReadAsync() != true) return null;
         var order = new Order
         {
             IdOrder = (int)reader["IdOrder"],
