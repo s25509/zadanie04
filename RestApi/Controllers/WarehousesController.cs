@@ -40,5 +40,9 @@ public class WarehousesController(IDeliveryService service) : ControllerBase
         {
             return NotFound(new NotFoundResponseModel(e.Message));
         }
+        catch
+        {
+            return Conflict(new ConflictResponseModel("Could not register a new Delivery with given parameters"));
+        }
     }
 }
